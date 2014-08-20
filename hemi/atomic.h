@@ -132,7 +132,7 @@ namespace hemi
       return ::atomicDec(address, val);
     #else
       unsigned int old = *address;
-      *address = (((old == 0) | (old > val)) ? val : (old-1) )
+      *address = (((old == 0) | (old > val)) ? val : (old-1) );
       return old;
     #endif
   }
