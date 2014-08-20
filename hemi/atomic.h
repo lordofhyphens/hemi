@@ -34,11 +34,22 @@ namespace hemi
   HEMI_DEV_CALLABLE_INLINE int atomicAdd(int* address, int val)
   {
     #ifdef HEMI_DEV_CODE
-      return ::atomicAdd(address, val);
+    return ::atomicAdd(address, val); // call the device function
     #else
-      float old = *address;
-      *address = old + val;
-      return old;
+      #if (__x86_64__ || __i486__ || __i586__ || __i686__) // These are all GCC macros
+        // use inline assembly here instead for X86s archs newer than 386.
+        // ref: http://en.wikipedia.org/wiki/Fetch-and-add#x86_implementation
+        asm volatile("lock; xaddl %%eax, %2;"
+            :"=a" (val)                  //Output
+            :"a" (val), "m" (*address)  //Input
+            :"memory");
+        return val;
+      #else 
+        // default to not actually atomic.
+        int old = *address;
+        *address = old + val;
+        return old;
+      #endif // Compiler-specific 
     #endif
   }
 
@@ -104,7 +115,25 @@ namespace hemi
       return old; 
     #endif
   }
+  HEMI_DEV_CALLABLE_INLINE unsigned int atomicInc(unsigned int* address, unsigned int val)
+  {
+    #ifdef HEMI_DEV_CODE
+      return ::atomicInc(address, val);
+    #else
+      unsigned int old = *address;
+      *address = ((old >= val) ? 0 : (old+1));
+      return old;
+  }
 
+  HEMI_DEV_CALLABLE_INLINE unsigned int atomicDec(unsigned int* address, unsigned int val)
+  {
+    #ifdef HEMI_DEV_CODE
+      return ::atomicDec(address, val);
+    #else
+      unsigned int old = *address;
+      *address = (((old == 0) | (old > val)) ? val : (old-1) )
+      return old;
+  }
   /* OpenMP-supported functions. These functions lock/unlock instead of using
    * named critical sections, because the named critical sections are global in
    * scope. If the lock acquisition fails, the function immediately returns
