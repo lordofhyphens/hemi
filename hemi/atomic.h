@@ -123,6 +123,7 @@ namespace hemi
       unsigned int old = *address;
       *address = ((old >= val) ? 0 : (old+1));
       return old;
+    #endif
   }
 
   HEMI_DEV_CALLABLE_INLINE unsigned int atomicDec(unsigned int* address, unsigned int val)
@@ -133,6 +134,7 @@ namespace hemi
       unsigned int old = *address;
       *address = (((old == 0) | (old > val)) ? val : (old-1) )
       return old;
+    #endif
   }
   /* OpenMP-supported functions. These functions lock/unlock instead of using
    * named critical sections, because the named critical sections are global in
